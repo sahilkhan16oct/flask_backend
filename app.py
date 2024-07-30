@@ -11,6 +11,10 @@ CORS(app)  # This will enable CORS for all routes
 USERNAME = "admin"
 PASSWORD = "12345"
 
+@app.route('/')
+def home():
+    return "Hello, Vercel!"
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -64,5 +68,4 @@ def convert():
     # Return the GDS data in a JSON response
     return jsonify({"gds_data": gds_data.decode('latin1')})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
