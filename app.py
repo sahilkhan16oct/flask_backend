@@ -1,27 +1,38 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session, redirect, url_for
+from flask_bcrypt import Bcrypt
 import json
 import subprocess
 import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # This will enable CORS for all routes
+app.secret_key = 'your_secret_key'  # Change this to a strong secret key
+CORS(app)
+bcrypt = Bcrypt(app)
 
-# Hardcoded credentials for simplicity (in production, use a database and hashing)
+# Encrypted password using bcrypt (generate this and replace below)
 USERNAME = "admin"
-PASSWORD = "12345"
+PASSWORD_HASH = bcrypt.generate_password_hash("12345").decode('utf-8')
 
 @app.route('/')
 def home():
+    if 'username' in session:
+        return "Hello, " + session['username'] + "!"
     return "Hello, Vercel!"
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-    if data['username'] == USERNAME and data['password'] == PASSWORD:
+    if data['username'] == USERNAME and bcrypt.check_password_hash(PASSWORD_HASH, data['password']):
+        session['username'] = USERNAME
         return jsonify({'status': 'success'})
     else:
         return jsonify({'status': 'failure'}), 401
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('home'))
 
 # Define the paths based on your directory structure
 BASE_DIR = 'C:\\Users\\sahil\\Desktop\\backend1'
@@ -49,6 +60,9 @@ def convert_json_to_gds(json_data):
 
 @app.route('/convert', methods=['POST'])
 def convert():
+    if 'username' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
     # Ensure the request content type is JSON
     if not request.is_json:
         return jsonify({"error": "Invalid input, JSON expected"}), 400
@@ -56,7 +70,6 @@ def convert():
     # Get the JSON data from the request
     json_data = request.get_json()
     print(json_data)
-
 
     # Convert the JSON data to GDS format
     gds_data, error = convert_json_to_gds(json_data)
