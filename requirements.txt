@@ -3,3 +3,4 @@ flask
 gdstk
 numpy
 flask-cors
+bcrypt
